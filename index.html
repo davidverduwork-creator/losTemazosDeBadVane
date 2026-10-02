@@ -42,9 +42,9 @@
     <main id="temas" class="contenido-principal" hidden>
         <section id="vista-lista" aria-labelledby="titulo-lista">
             <div class="encabezado-principal">
-                <p class="sobretitulo">Tu espacio de estudio</p>
+                <p class="sobretitulo">Espacio de estudio</p>
                 <h1 id="titulo-lista">Temas</h1>
-                <p class="introduccion">Consulta y organiza tus temas por materia.</p>
+                <p>Poquito a poquito, cariño.</p>
             </div>
             <div id="materias" class="materias" aria-live="polite">
                 <p class="estado-datos">Conectando con Supabase…</p>
@@ -68,7 +68,7 @@
 
             <section class="panel-vueltas" aria-labelledby="titulo-vueltas">
                 <div class="encabezado-vueltas">
-                    <h2 id="titulo-vueltas">Vueltas registradas</h2>
+                    <h2 id="titulo-vueltas">Vueltas</h2>
                     <button id="btn-anadir-vuelta" class="boton-anadir-vuelta" type="button">
                         <span class="icono-boton" aria-hidden="true">+</span>
                         Añadir vuelta
@@ -87,6 +87,30 @@
                     </table>
                 </div>
                 <p id="estado-vuelta" class="estado-vuelta" role="status" aria-live="polite"></p>
+            </section>
+
+            <section class="panel-cantes" aria-labelledby="titulo-cantes">
+                <div class="encabezado-cantes">
+                    <h2 id="titulo-cantes">Cantes</h2>
+                    <button id="btn-anadir-cante" class="boton-anadir-cante" type="button">
+                        <span class="icono-boton" aria-hidden="true">+</span>
+                        Añadir cante
+                    </button>
+                </div>
+                <div class="tabla-contenedor">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Número de cante</th>
+                                <th scope="col">Tiempo (min:seg)</th>
+                                <th scope="col">Observaciones</th>
+                                <th scope="col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-cantes"></tbody>
+                    </table>
+                </div>
+                <p id="estado-cante" class="estado-cante" role="status" aria-live="polite"></p>
             </section>
         </section>
     </main>

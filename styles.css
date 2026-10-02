@@ -371,7 +371,8 @@ tbody tr:last-child td {
 }
 
 .panel-vueltas,
-.panel-reforma {
+.panel-reforma,
+.panel-cantes {
     margin-bottom: 20px;
     overflow: hidden;
     background: var(--superficie);
@@ -381,7 +382,8 @@ tbody tr:last-child td {
 }
 
 .panel-vueltas h2,
-.panel-reforma h2 {
+.panel-reforma h2,
+.panel-cantes h2 {
     margin: 0;
     padding: 18px 20px;
     border-bottom: 1px solid var(--borde);
@@ -397,7 +399,21 @@ tbody tr:last-child td {
     border-bottom: 1px solid var(--borde);
 }
 
+.encabezado-cantes {
+    padding: 10px 20px 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--borde);
+}
+
 .encabezado-vueltas h2 {
+    border-bottom: 0;
+    padding-right: 0;
+}
+
+.encabezado-cantes h2 {
     border-bottom: 0;
     padding-right: 0;
 }
@@ -419,12 +435,36 @@ tbody tr:last-child td {
     white-space: nowrap;
 }
 
+.boton-anadir-cante {
+    min-height: 38px;
+    padding: 7px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    background: #f7f4fb;
+    color: var(--lila);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
 .boton-anadir-vuelta:hover,
-.boton-anadir-vuelta:focus-visible {
+.boton-anadir-vuelta:focus-visible,
+.boton-anadir-cante:hover,
+.boton-anadir-cante:focus-visible {
     background: #eee8f7;
 }
 
 .boton-anadir-vuelta:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.boton-anadir-cante:disabled {
     cursor: wait;
     opacity: 0.65;
 }
@@ -434,7 +474,8 @@ tbody tr:last-child td {
     line-height: 1;
 }
 
-.panel-vueltas table {
+.panel-vueltas table,
+.panel-cantes table {
     table-layout: auto;
 }
 
@@ -492,8 +533,26 @@ tbody tr:last-child td {
     display: block;
 }
 
-.fila-edicion input {
+.fila-edicion input,
+.fila-edicion textarea {
     width: 100%;
+}
+
+.fila-edicion textarea {
+    min-width: 150px;
+    min-height: 56px;
+    padding: 7px 9px;
+    border: 1px solid var(--borde);
+    border-radius: 7px;
+    color: var(--texto);
+    font: inherit;
+    resize: vertical;
+}
+
+.fila-edicion input:focus-visible,
+.fila-edicion textarea:focus-visible {
+    outline: 2px solid var(--lila);
+    outline-offset: 1px;
 }
 
 .boton-accion:hover,
@@ -523,12 +582,22 @@ tbody tr:last-child td {
     font-size: 0.84rem;
 }
 
+.estado-cante {
+    min-height: 1.25em;
+    margin: 0;
+    padding: 0 20px;
+    color: var(--texto-suave);
+    font-size: 0.84rem;
+}
+
 @media (max-width: 520px) {
-    .encabezado-vueltas {
+    .encabezado-vueltas,
+    .encabezado-cantes {
         gap: 8px;
     }
 
-    .encabezado-vueltas h2 {
+    .encabezado-vueltas h2,
+    .encabezado-cantes h2 {
         padding-left: 14px;
         font-size: 0.98rem;
     }
@@ -538,14 +607,23 @@ tbody tr:last-child td {
         font-size: 0.78rem;
     }
 
+    .boton-anadir-cante {
+        padding: 7px 9px;
+        font-size: 0.78rem;
+    }
+
     .panel-vueltas th,
-    .panel-vueltas td {
+    .panel-vueltas td,
+    .panel-cantes th,
+    .panel-cantes td {
         padding-right: 8px;
         padding-left: 8px;
     }
 
     .panel-vueltas th:first-child,
-    .panel-vueltas td:first-child {
+    .panel-vueltas td:first-child,
+    .panel-cantes th:first-child,
+    .panel-cantes td:first-child {
         padding-left: 12px;
     }
 

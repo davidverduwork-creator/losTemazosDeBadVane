@@ -13,10 +13,13 @@ const contenedorMaterias = document.getElementById('materias');
 const estadoDatos = document.getElementById('estado-datos');
 const detalleTitulo = document.getElementById('detalle-titulo');
 const tbodyVueltas = document.getElementById('tbody-vueltas');
+const tbodyCantes = document.getElementById('tbody-cantes');
 const botonVolver = document.getElementById('btn-volver');
 const botonAnadirVuelta = document.getElementById('btn-anadir-vuelta');
+const botonAnadirCante = document.getElementById('btn-anadir-cante');
 const checkboxReformaDetalle = document.getElementById('chk-reforma-detalle');
 const estadoVuelta = document.getElementById('estado-vuelta');
+const estadoCante = document.getElementById('estado-cante');
 let supabase;
 let usuarioActivoId;
 let temaDetalleActual;
@@ -48,6 +51,27 @@ function obtenerVueltas(tema) {
     const vueltas = tema.temasVueltas;
     if (Array.isArray(vueltas)) return vueltas;
     return vueltas ? [vueltas] : [];
+}
+
+function obtenerCantes(tema) {
+    const cantes = tema.temasCantes;
+    if (Array.isArray(cantes)) return cantes;
+    return cantes ? [cantes] : [];
+}
+
+function formatearTiempoCante(segundos) {
+    const totalSegundos = Number(segundos);
+    if (!Number.isFinite(totalSegundos) || totalSegundos < 0) return '0:00';
+    const minutos = Math.floor(totalSegundos / 60);
+    const restoSegundos = String(Math.floor(totalSegundos % 60)).padStart(2, '0');
+    return `${minutos}:${restoSegundos}`;
+}
+
+function parsearTiempoCante(tiempo) {
+    const coincidencia = /^(\d+):([0-5]\d)$/.exec(tiempo);
+    if (!coincidencia) return undefined;
+    const totalSegundos = Number(coincidencia[1]) * 60 + Number(coincidencia[2]);
+    return totalSegundos <= 32767 ? totalSegundos : undefined;
 }
 
 async function guardarReforma(tema, checkbox) {
@@ -213,13 +237,138 @@ function renderizarFilaVuelta(vuelta, indice) {
     return fila;
 }
 
+function renderizarFilaCante(cante, indice) {
+    const fila = document.createElement('tr');
+    fila.append(crearElemento('td', '', String(cante.numCante ?? '')));
+    fila.append(crearElemento('td', '', formatearTiempoCante(cante.tiempoCante)));
+    fila.append(crearElemento('td', '', cante.observacionesCante ?? ''));
+
+    const acciones = document.createElement('td');
+    acciones.className = 'acciones-vuelta';
+    acciones.append(
+        crearBotonAccion('Editar cante', 'editar', 'boton-accion', () => editarCante(cante, indice)),
+        crearBotonAccion('Eliminar cante', 'eliminar', 'boton-accion boton-peligro', () => eliminarCante(cante))
+    );
+    fila.append(acciones);
+    return fila;
+}
+
+function editarCante(cante, indice, nueva = false) {
+    const tema = temaDetalleActual;
+    const fila = document.createElement('tr');
+    fila.className = 'fila-edicion';
+
+    const celdaNumero = document.createElement('td');
+    const campoNumero = document.createElement('input');
+    campoNumero.type = 'number';
+    campoNumero.min = '1';
+    campoNumero.max = '32767';
+    campoNumero.step = '1';
+    campoNumero.required = true;
+    campoNumero.value = String(cante.numCante ?? '');
+    campoNumero.setAttribute('aria-label', 'Número de cante');
+    celdaNumero.append(campoNumero);
+    fila.append(celdaNumero);
+
+    const celdaTiempo = document.createElement('td');
+    const campoTiempo = document.createElement('input');
+    campoTiempo.type = 'text';
+    campoTiempo.inputMode = 'numeric';
+    campoTiempo.required = true;
+    campoTiempo.pattern = '[0-9]+:[0-5][0-9]';
+    campoTiempo.title = 'Usa minutos:segundos, por ejemplo 1:25 (máximo 9:06:07)';
+    campoTiempo.value = formatearTiempoCante(cante.tiempoCante ?? 0);
+    campoTiempo.setAttribute('aria-label', 'Duración del cante en minutos y segundos');
+    campoTiempo.addEventListener('input', () => campoTiempo.setCustomValidity(''));
+    celdaTiempo.append(campoTiempo);
+    fila.append(celdaTiempo);
+
+    const celdaObservaciones = document.createElement('td');
+    const campoObservaciones = document.createElement('textarea');
+    campoObservaciones.rows = 2;
+    campoObservaciones.value = cante.observacionesCante ?? '';
+    campoObservaciones.setAttribute('aria-label', 'Observaciones del cante');
+    celdaObservaciones.append(campoObservaciones);
+    fila.append(celdaObservaciones);
+
+    const acciones = document.createElement('td');
+    acciones.className = 'acciones-vuelta';
+    const botonGuardar = crearBotonAccion('Guardar cante', 'guardar', 'boton-accion', async () => {
+        if (!campoNumero.reportValidity() || !campoTiempo.reportValidity()) return;
+        botonGuardar.disabled = true;
+        estadoCante.textContent = 'Guardando cambios…';
+
+        try {
+            const cambios = {
+                numCante: Number(campoNumero.value),
+                tiempoCante: parsearTiempoCante(campoTiempo.value),
+                observacionesCante: campoObservaciones.value
+            };
+            if (cambios.tiempoCante === undefined) {
+                campoTiempo.setCustomValidity('La duración debe ser como máximo 9:06:07.');
+                campoTiempo.reportValidity();
+                botonGuardar.disabled = false;
+                return;
+            }
+            const consulta = nueva
+                ? supabase.from('temasCantes').insert({
+                    ...cambios,
+                    temas_id: tema.temas_id
+                })
+                : supabase.from('temasCantes')
+                    .update(cambios)
+                    .eq('cante_id', cante.cante_id);
+            const { data, error } = await consulta
+                .select('cante_id,temas_id,numCante,tiempoCante,observacionesCante')
+                .single();
+
+            if (error) throw error;
+
+            if (nueva) {
+                tema.temasCantes.push(data);
+            } else {
+                Object.assign(cante, cambios);
+            }
+            tema.temasCantes.sort((a, b) => Number(a.numCante) - Number(b.numCante));
+            if (temaDetalleActual === tema) {
+                renderizarCantes(tema);
+                estadoCante.textContent = nueva
+                    ? 'Cante añadido correctamente.'
+                    : 'Cante actualizado correctamente.';
+            }
+        } catch (error) {
+            const mensaje = `No se pudo ${nueva ? 'añadir' : 'actualizar'} el cante: ${error.message}`;
+            if (temaDetalleActual === tema) estadoCante.textContent = mensaje;
+            else estadoDatos.textContent = mensaje;
+            botonGuardar.disabled = false;
+        }
+    });
+    acciones.append(
+        botonGuardar,
+        crearBotonAccion('Cancelar edición', 'cancelar', 'boton-accion', () => {
+            if (temaDetalleActual === tema) renderizarCantes(tema);
+        })
+    );
+    fila.append(acciones);
+
+    const cantes = obtenerCantes(temaDetalleActual);
+    const filas = cantes.map((item, itemIndice) =>
+        !nueva && itemIndice === indice ? fila : renderizarFilaCante(item, itemIndice)
+    );
+    if (nueva) filas.push(fila);
+    tbodyCantes.replaceChildren(...filas);
+    campoNumero.focus();
+}
+
 function editarVuelta(vuelta, indice, nueva = false) {
+    const tema = temaDetalleActual;
     const fila = document.createElement('tr');
     fila.className = 'fila-edicion';
     const celdaNumero = document.createElement('td');
     const campoNumero = document.createElement('input');
     campoNumero.type = 'number';
     campoNumero.min = '1';
+    campoNumero.max = '32767';
     campoNumero.step = '1';
     campoNumero.required = true;
     campoNumero.value = String(vuelta.numVuelta ?? '');
@@ -251,46 +400,51 @@ function editarVuelta(vuelta, indice, nueva = false) {
             const consulta = nueva
                 ? supabase.from('temasVueltas').insert({
                     ...cambios,
-                    vuelta_id: temaDetalleActual.temas_id
+                    temas_id: tema.temas_id
                 })
                 : supabase.from('temasVueltas')
                     .update(cambios)
                     .eq('vuelta_id', vuelta.vuelta_id);
             const { data, error } = await consulta
-                .select('vuelta_id,fechaVuelta,numVuelta')
+                .select('vuelta_id,temas_id,fechaVuelta,numVuelta')
                 .single();
 
             if (error) throw error;
 
             if (nueva) {
-                temaDetalleActual.temasVueltas.push(data);
+                tema.temasVueltas.push(data);
             } else {
                 Object.assign(vuelta, cambios);
             }
-            temaDetalleActual.temasVueltas.sort((a, b) => Number(a.numVuelta) - Number(b.numVuelta));
-            renderizarVueltas(temaDetalleActual);
-            actualizarContadorVueltasLista(temaDetalleActual);
-            estadoVuelta.textContent = nueva
-                ? 'Vuelta añadida correctamente.'
-                : 'Vuelta actualizada correctamente.';
+            tema.temasVueltas.sort((a, b) => Number(a.numVuelta) - Number(b.numVuelta));
+            if (temaDetalleActual === tema) {
+                renderizarVueltas(tema);
+                actualizarContadorVueltasLista(tema);
+                estadoVuelta.textContent = nueva
+                    ? 'Vuelta añadida correctamente.'
+                    : 'Vuelta actualizada correctamente.';
+            }
         } catch (error) {
-            estadoVuelta.textContent = `No se pudo ${nueva ? 'añadir' : 'actualizar'} la vuelta: ${error.message}`;
+            const mensaje = `No se pudo ${nueva ? 'añadir' : 'actualizar'} la vuelta: ${error.message}`;
+            if (temaDetalleActual === tema) estadoVuelta.textContent = mensaje;
+            else estadoDatos.textContent = mensaje;
             botonGuardar.disabled = false;
         }
     });
     acciones.append(
         botonGuardar,
         crearBotonAccion('Cancelar edición', 'cancelar', 'boton-accion', () => {
+            if (temaDetalleActual !== tema) return;
             if (nueva) {
                 estadoVuelta.textContent = '';
-                renderizarVueltas(temaDetalleActual);
+                renderizarVueltas(tema);
             } else {
-                renderizarVueltas(temaDetalleActual);
+                renderizarVueltas(tema);
             }
         })
     );
     fila.append(acciones);
-    const vueltas = obtenerVueltas(temaDetalleActual);
+    const vueltas = obtenerVueltas(tema);
     const filas = vueltas.map((item, itemIndice) =>
         !nueva && itemIndice === indice ? fila : renderizarFilaVuelta(item, itemIndice)
     );
@@ -332,6 +486,36 @@ async function eliminarVuelta(vuelta) {
     }
 }
 
+async function eliminarCante(cante) {
+    const tema = temaDetalleActual;
+    if (!window.confirm(`¿Seguro que quieres eliminar el cante ${cante.numCante}? Esta acción no se puede deshacer.`)) {
+        return;
+    }
+
+    estadoCante.textContent = 'Eliminando cante…';
+    try {
+        const { error } = await supabase
+            .from('temasCantes')
+            .delete()
+            .eq('cante_id', cante.cante_id)
+            .select('cante_id')
+            .single();
+
+        if (error) throw error;
+
+        tema.temasCantes = tema.temasCantes
+            .filter((item) => item.cante_id !== cante.cante_id);
+        if (temaDetalleActual === tema) {
+            renderizarCantes(tema);
+            estadoCante.textContent = 'Cante eliminado correctamente.';
+        }
+    } catch (error) {
+        const mensaje = `No se pudo eliminar el cante: ${error.message}`;
+        if (temaDetalleActual === tema) estadoCante.textContent = mensaje;
+        else estadoDatos.textContent = mensaje;
+    }
+}
+
 function renderizarVueltas(tema) {
     const vueltas = obtenerVueltas(tema);
     tema.temasVueltas = vueltas;
@@ -349,12 +533,31 @@ function renderizarVueltas(tema) {
     vueltas.forEach((vuelta, indice) => tbodyVueltas.append(renderizarFilaVuelta(vuelta, indice)));
 }
 
+function renderizarCantes(tema) {
+    const cantes = obtenerCantes(tema);
+    tema.temasCantes = cantes;
+    tbodyCantes.replaceChildren();
+
+    if (cantes.length === 0) {
+        const fila = crearElemento('tr', 'fila-vacia');
+        const celda = crearElemento('td', '', 'Todavía no hay cantes registrados para este tema.');
+        celda.colSpan = 4;
+        fila.append(celda);
+        tbodyCantes.append(fila);
+        return;
+    }
+
+    cantes.forEach((cante, indice) => tbodyCantes.append(renderizarFilaCante(cante, indice)));
+}
+
 function abrirDetalle(tema, botonOrigen) {
     temaDetalleActual = tema;
     botonTemaAnterior = botonOrigen;
     detalleTitulo.textContent = `Tema ${tema.numTema ?? ''} ${tema.typeTema ?? ''}`.trim();
     renderizarVueltas(tema);
+    renderizarCantes(tema);
     estadoVuelta.textContent = '';
+    estadoCante.textContent = '';
     checkboxReformaDetalle.checked = Boolean(tema.tieneReformaPendiente);
     checkboxReformaDetalle.dataset.temaId = String(tema.temas_id);
     checkboxReformaDetalle.setAttribute('aria-label', `Reforma pendiente para Tema ${tema.numTema ?? ''}`);
@@ -376,7 +579,7 @@ function volverALista() {
 async function cargarTemas() {
     const { data, error } = await supabase
         .from('temas')
-        .select('temas_id,numTema,typeTema,tieneReformaPendiente,temasVueltas(vuelta_id,fechaVuelta,numVuelta)')
+        .select('temas_id,numTema,typeTema,tieneReformaPendiente,temasVueltas(vuelta_id,temas_id,fechaVuelta,numVuelta),temasCantes(cante_id,temas_id,numCante,tiempoCante,observacionesCante)')
         .order('typeTema')
         .order('numTema');
 
@@ -387,7 +590,11 @@ async function cargarTemas() {
     contenedorMaterias.replaceChildren();
     const grupos = new Map();
     for (const temaOriginal of data ?? []) {
-        const tema = { ...temaOriginal, temasVueltas: obtenerVueltas(temaOriginal) };
+        const tema = {
+            ...temaOriginal,
+            temasVueltas: obtenerVueltas(temaOriginal),
+            temasCantes: obtenerCantes(temaOriginal)
+        };
         const tipo = tema.typeTema || 'Sin materia';
         if (!grupos.has(tipo)) grupos.set(tipo, []);
         grupos.get(tipo).push(tema);
@@ -434,6 +641,27 @@ botonVolver.addEventListener('click', volverALista);
 
 checkboxReformaDetalle.addEventListener('change', () => {
     if (temaDetalleActual) guardarReforma(temaDetalleActual, checkboxReformaDetalle);
+});
+
+botonAnadirCante.addEventListener('click', () => {
+    if (!temaDetalleActual) return;
+
+    if (tbodyCantes.querySelector('.fila-edicion')) {
+        estadoCante.textContent = 'Guarda o cancela el cante que estás editando antes de añadir otro.';
+        return;
+    }
+
+    const cantes = obtenerCantes(temaDetalleActual);
+    const maxNumCante = cantes.reduce((maximo, cante) => {
+        const numero = Number(cante.numCante);
+        return Number.isFinite(numero) ? Math.max(maximo, numero) : maximo;
+    }, 0);
+    estadoCante.textContent = '';
+    editarCante({
+        numCante: maxNumCante + 1,
+        tiempoCante: 0,
+        observacionesCante: ''
+    }, cantes.length, true);
 });
 
 botonAnadirVuelta.addEventListener('click', () => {
