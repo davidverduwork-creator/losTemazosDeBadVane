@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#fbf9ff">
+    <title>Temas · BadVanne</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="barra-superior">
+        <a class="logo" href="#temas" aria-label="BadVanne, ir a temas">
+            <img src="src/gemini-svg.svg" alt="Los temazos de BadVanne">
+        </a>
+
+        <nav class="navegacion" aria-label="Navegación principal">
+            <a href="#temas" aria-current="page">Temas</a>
+            <span class="separador" aria-hidden="true"></span>
+            <a href="#info">Info</a>
+        </nav>
+    </header>
+
+    <main id="temas" class="contenido-principal">
+        <div class="encabezado-principal">
+            <p class="sobretitulo">Tu espacio de estudio</p>
+            <h1>Temas</h1>
+            <p class="introduccion">Consulta y organiza tus temas por materia.</p>
+        </div>
+
+        <div class="materias">
+            <section class="materia" aria-labelledby="titulo-constitucional">
+                <div class="materia-encabezado">
+                    <span class="materia-indicador indicador-lila" aria-hidden="true"></span>
+                    <h2 id="titulo-constitucional">Constitucional</h2>
+                </div>
+                <div class="tabla-contenedor">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Tema</th>
+                                <th scope="col">Vueltas</th>
+                                <th scope="col">Reforma</th>
+                            </tr>
+                        </thead>
+                        <tbody id="temas-constitucional">
+                            <tr class="fila-vacia">
+                                <td colspan="3">Aún no hay temas para mostrar.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="materia" aria-labelledby="titulo-civil">
+                <div class="materia-encabezado">
+                    <span class="materia-indicador indicador-rosa" aria-hidden="true"></span>
+                    <h2 id="titulo-civil">Civil</h2>
+                </div>
+                <div class="tabla-contenedor">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Tema</th>
+                                <th scope="col">Vueltas</th>
+                                <th scope="col">Reforma</th>
+                            </tr>
+                        </thead>
+                        <tbody id="temas-civil">
+                            <tr class="fila-vacia">
+                                <td colspan="3">Aún no hay temas para mostrar.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="materia" aria-labelledby="titulo-penal">
+                <div class="materia-encabezado">
+                    <span class="materia-indicador indicador-azul" aria-hidden="true"></span>
+                    <h2 id="titulo-penal">Penal</h2>
+                </div>
+                <div class="tabla-contenedor">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Tema</th>
+                                <th scope="col">Vueltas</th>
+                                <th scope="col">Reforma</th>
+                            </tr>
+                        </thead>
+                        <tbody id="temas-penal">
+                            <tr class="fila-vacia">
+                                <td colspan="3">Aún no hay temas para mostrar.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer id="info" class="pie-pagina">
+        <p>Los registros de cada materia aparecerán aquí al conectarlos con Supabase.</p>
+    </footer>
+</body>
+</html>
