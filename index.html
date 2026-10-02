@@ -17,90 +17,43 @@
             <a href="#temas" aria-current="page">Temas</a>
             <span class="separador" aria-hidden="true"></span>
             <a href="#info">Info</a>
+            <span id="usuario-activo" class="usuario-activo" hidden></span>
+            <button id="btn-cerrar-sesion" class="boton-secundario" type="button" hidden>Cerrar sesión</button>
         </nav>
     </header>
 
-    <main id="temas" class="contenido-principal">
+    <main id="panel-acceso" class="panel-acceso">
+        <form id="form-acceso" class="form-acceso">
+            <p class="sobretitulo">Acceso privado</p>
+            <h1>Iniciar sesión</h1>
+            <p class="introduccion">Accede con la cuenta que te han creado en Supabase.</p>
+
+            <label for="email">Correo electrónico</label>
+            <input id="email" name="email" type="email" autocomplete="username" required>
+
+            <label for="password">Contraseña</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+            <button id="btn-iniciar-sesion" class="boton-principal" type="submit">Iniciar sesión</button>
+            <p id="estado-acceso" class="estado-formulario" role="status" aria-live="polite"></p>
+        </form>
+    </main>
+
+    <main id="temas" class="contenido-principal" hidden>
         <div class="encabezado-principal">
             <p class="sobretitulo">Tu espacio de estudio</p>
             <h1>Temas</h1>
             <p class="introduccion">Consulta y organiza tus temas por materia.</p>
         </div>
 
-        <div class="materias">
-            <section class="materia" aria-labelledby="titulo-constitucional">
-                <div class="materia-encabezado">
-                    <span class="materia-indicador indicador-lila" aria-hidden="true"></span>
-                    <h2 id="titulo-constitucional">Constitucional</h2>
-                </div>
-                <div class="tabla-contenedor">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th scope="col">Tema</th>
-                                <th scope="col">Vueltas</th>
-                                <th scope="col">Reforma</th>
-                            </tr>
-                        </thead>
-                        <tbody id="temas-constitucional">
-                            <tr class="fila-vacia">
-                                <td colspan="3">Aún no hay temas para mostrar.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section class="materia" aria-labelledby="titulo-civil">
-                <div class="materia-encabezado">
-                    <span class="materia-indicador indicador-rosa" aria-hidden="true"></span>
-                    <h2 id="titulo-civil">Civil</h2>
-                </div>
-                <div class="tabla-contenedor">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th scope="col">Tema</th>
-                                <th scope="col">Vueltas</th>
-                                <th scope="col">Reforma</th>
-                            </tr>
-                        </thead>
-                        <tbody id="temas-civil">
-                            <tr class="fila-vacia">
-                                <td colspan="3">Aún no hay temas para mostrar.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section class="materia" aria-labelledby="titulo-penal">
-                <div class="materia-encabezado">
-                    <span class="materia-indicador indicador-azul" aria-hidden="true"></span>
-                    <h2 id="titulo-penal">Penal</h2>
-                </div>
-                <div class="tabla-contenedor">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th scope="col">Tema</th>
-                                <th scope="col">Vueltas</th>
-                                <th scope="col">Reforma</th>
-                            </tr>
-                        </thead>
-                        <tbody id="temas-penal">
-                            <tr class="fila-vacia">
-                                <td colspan="3">Aún no hay temas para mostrar.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+        <div id="materias" class="materias" aria-live="polite">
+            <p class="estado-datos">Conectando con Supabase…</p>
         </div>
     </main>
 
     <footer id="info" class="pie-pagina">
-        <p>Los registros de cada materia aparecerán aquí al conectarlos con Supabase.</p>
+        <p id="estado-datos" role="status" aria-live="polite">Cargando temas…</p>
     </footer>
+    <script type="module" src="/app.js"></script>
 </body>
 </html>

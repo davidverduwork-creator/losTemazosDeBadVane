@@ -77,6 +77,103 @@ body {
     background: #d9d3e2;
 }
 
+.usuario-activo {
+    max-width: 220px;
+    overflow: hidden;
+    color: var(--texto-suave);
+    font-size: 0.82rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.boton-principal,
+.boton-secundario {
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 650;
+    transition: background-color 160ms ease, opacity 160ms ease;
+}
+
+.boton-principal {
+    min-height: 46px;
+    padding: 11px 16px;
+    background: var(--lila);
+    color: #fff;
+}
+
+.boton-principal:hover {
+    background: #714aad;
+}
+
+.boton-secundario {
+    padding: 9px 12px;
+    background: #f3eff9;
+    color: var(--lila);
+}
+
+.boton-secundario:hover {
+    background: #e9e1f4;
+}
+
+.boton-principal:disabled,
+.boton-secundario:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.panel-acceso {
+    width: min(440px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 72px 0;
+}
+
+.form-acceso {
+    padding: 30px;
+    display: grid;
+    gap: 12px;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+    box-shadow: var(--sombra);
+}
+
+.form-acceso h1 {
+    margin-bottom: 0;
+}
+
+.form-acceso .introduccion {
+    margin-bottom: 12px;
+}
+
+.form-acceso label {
+    font-size: 0.9rem;
+    font-weight: 650;
+}
+
+.form-acceso input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    color: var(--texto);
+    font: inherit;
+}
+
+.form-acceso input:focus-visible {
+    outline: 2px solid var(--lila);
+    outline-offset: 2px;
+}
+
+.estado-formulario {
+    min-height: 1.25em;
+    margin: 0;
+    color: #9c3450;
+    font-size: 0.88rem;
+}
+
 .contenido-principal {
     width: min(1240px, calc(100% - 48px));
     margin: 0 auto;
@@ -256,9 +353,30 @@ tbody tr:last-child td {
         font-size: 0.88rem;
     }
 
+    .navegacion {
+        gap: 10px;
+    }
+
+    .usuario-activo {
+        max-width: 110px;
+    }
+
+    .boton-secundario {
+        padding: 8px;
+        font-size: 0.78rem;
+    }
+
+    .form-acceso {
+        padding: 24px 20px;
+    }
+
     th,
     td {
         padding: 11px 7px;
+    }
+
+    [hidden] {
+        display: none !important;
     }
 
     th {
