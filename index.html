@@ -40,15 +40,55 @@
     </main>
 
     <main id="temas" class="contenido-principal" hidden>
-        <div class="encabezado-principal">
-            <p class="sobretitulo">Tu espacio de estudio</p>
-            <h1>Temas</h1>
-            <p class="introduccion">Consulta y organiza tus temas por materia.</p>
-        </div>
+        <section id="vista-lista" aria-labelledby="titulo-lista">
+            <div class="encabezado-principal">
+                <p class="sobretitulo">Tu espacio de estudio</p>
+                <h1 id="titulo-lista">Temas</h1>
+                <p class="introduccion">Consulta y organiza tus temas por materia.</p>
+            </div>
+            <div id="materias" class="materias" aria-live="polite">
+                <p class="estado-datos">Conectando con Supabase…</p>
+            </div>
+        </section>
 
-        <div id="materias" class="materias" aria-live="polite">
-            <p class="estado-datos">Conectando con Supabase…</p>
-        </div>
+        <section id="vista-detalle" class="vista-detalle" aria-labelledby="detalle-titulo" hidden>
+            <header class="encabezado-detalle">
+                <h1 id="detalle-titulo" tabindex="-1"></h1>
+            </header>
+
+            <button id="btn-volver" class="boton-volver" type="button">← Volver a temas</button>
+
+            <section class="panel-reforma" aria-labelledby="titulo-reforma">
+                <h2 id="titulo-reforma">Reforma pendiente</h2>
+                <label class="control-reforma">
+                    <input id="chk-reforma-detalle" type="checkbox">
+                    <span>Este tema tiene una reforma pendiente</span>
+                </label>
+            </section>
+
+            <section class="panel-vueltas" aria-labelledby="titulo-vueltas">
+                <div class="encabezado-vueltas">
+                    <h2 id="titulo-vueltas">Vueltas registradas</h2>
+                    <button id="btn-anadir-vuelta" class="boton-anadir-vuelta" type="button">
+                        <span class="icono-boton" aria-hidden="true">+</span>
+                        Añadir vuelta
+                    </button>
+                </div>
+                <div class="tabla-contenedor">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th scope="col">Número de vuelta</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-vueltas"></tbody>
+                    </table>
+                </div>
+                <p id="estado-vuelta" class="estado-vuelta" role="status" aria-live="polite"></p>
+            </section>
+        </section>
     </main>
 
     <footer id="info" class="pie-pagina">

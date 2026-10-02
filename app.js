@@ -7,10 +7,20 @@ const botonIniciarSesion = document.getElementById('btn-iniciar-sesion');
 const botonCerrarSesion = document.getElementById('btn-cerrar-sesion');
 const usuarioActivo = document.getElementById('usuario-activo');
 const contenidoTemas = document.getElementById('temas');
+const vistaLista = document.getElementById('vista-lista');
+const vistaDetalle = document.getElementById('vista-detalle');
 const contenedorMaterias = document.getElementById('materias');
 const estadoDatos = document.getElementById('estado-datos');
+const detalleTitulo = document.getElementById('detalle-titulo');
+const tbodyVueltas = document.getElementById('tbody-vueltas');
+const botonVolver = document.getElementById('btn-volver');
+const botonAnadirVuelta = document.getElementById('btn-anadir-vuelta');
+const checkboxReformaDetalle = document.getElementById('chk-reforma-detalle');
+const estadoVuelta = document.getElementById('estado-vuelta');
 let supabase;
 let usuarioActivoId;
+let temaDetalleActual;
+let botonTemaAnterior;
 
 try {
     supabase = crearClienteSupabase();
@@ -24,6 +34,57 @@ function crearElemento(tag, className, texto) {
     if (className) elemento.className = className;
     if (texto !== undefined) elemento.textContent = texto;
     return elemento;
+}
+
+function fechaLocalActual() {
+    const fecha = new Date();
+    const ano = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+}
+
+function obtenerVueltas(tema) {
+    const vueltas = tema.temasVueltas;
+    if (Array.isArray(vueltas)) return vueltas;
+    return vueltas ? [vueltas] : [];
+}
+
+async function guardarReforma(tema, checkbox) {
+    const valorAnterior = Boolean(tema.tieneReformaPendiente);
+    const nuevoValor = checkbox.checked;
+    const checkboxes = [...document.querySelectorAll('[data-tema-id]')]
+        .filter((elemento) => elemento.dataset.temaId === String(tema.temas_id));
+    checkboxes.forEach((elemento) => {
+        elemento.disabled = true;
+    });
+    estadoDatos.textContent = 'Guardando cambio…';
+
+    try {
+        const { error } = await supabase
+            .from('temas')
+            .update({ tieneReformaPendiente: nuevoValor })
+            .eq('temas_id', tema.temas_id)
+            .select('temas_id')
+            .single();
+
+        if (error) throw error;
+
+        tema.tieneReformaPendiente = nuevoValor;
+        checkboxes.forEach((elemento) => {
+            elemento.checked = nuevoValor;
+        });
+        estadoDatos.textContent = 'Cambio guardado.';
+    } catch (error) {
+        checkboxes.forEach((elemento) => {
+            elemento.checked = valorAnterior;
+        });
+        estadoDatos.textContent = `No se pudo guardar el cambio: ${error.message}`;
+    } finally {
+        checkboxes.forEach((elemento) => {
+            elemento.disabled = false;
+        });
+    }
 }
 
 function crearTabla(tipo, temas, indice) {
@@ -66,38 +127,23 @@ function crearTabla(tipo, temas, indice) {
 
     for (const tema of temas) {
         const fila = document.createElement('tr');
-        fila.append(crearElemento('td', '', String(tema.numTema ?? '')));
-        fila.append(crearElemento('td', '', String(tema.temasVueltas?.length ?? 0)));
+        const celdaTema = document.createElement('td');
+        const botonTema = crearElemento('button', 'enlace-tema', `Tema ${tema.numTema ?? ''}`);
+        botonTema.type = 'button';
+        botonTema.addEventListener('click', () => abrirDetalle(tema, botonTema));
+        celdaTema.append(botonTema);
+        fila.append(celdaTema);
+        const celdaVueltas = crearElemento('td', '', String(obtenerVueltas(tema).length));
+        celdaVueltas.dataset.contadorTema = String(tema.temas_id);
+        fila.append(celdaVueltas);
 
         const celdaReforma = document.createElement('td');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = Boolean(tema.tieneReformaPendiente);
+        checkbox.dataset.temaId = String(tema.temas_id);
         checkbox.setAttribute('aria-label', `Reforma pendiente para ${tema.numTema ?? 'este tema'}`);
-        checkbox.addEventListener('change', async () => {
-            const valorAnterior = tema.tieneReformaPendiente;
-            checkbox.disabled = true;
-            estadoDatos.textContent = 'Guardando cambio…';
-
-            try {
-                const { error } = await supabase
-                    .from('temas')
-                    .update({ tieneReformaPendiente: checkbox.checked })
-                    .eq('temas_id', tema.temas_id)
-                    .select('temas_id')
-                    .single();
-
-                if (error) throw error;
-
-                tema.tieneReformaPendiente = checkbox.checked;
-                estadoDatos.textContent = 'Cambio guardado.';
-            } catch (error) {
-                checkbox.checked = Boolean(valorAnterior);
-                estadoDatos.textContent = `No se pudo guardar el cambio: ${error.message}`;
-            } finally {
-                checkbox.disabled = false;
-            }
-        });
+        checkbox.addEventListener('change', () => guardarReforma(tema, checkbox));
         celdaReforma.append(checkbox);
         fila.append(celdaReforma);
         tbody.append(fila);
@@ -107,6 +153,224 @@ function crearTabla(tipo, temas, indice) {
     contenedorTabla.append(tabla);
     seccion.append(contenedorTabla);
     return seccion;
+}
+
+function formatearFecha(fecha) {
+    if (!fecha) return '';
+    const [year, month, day] = fecha.split('-').map(Number);
+    return new Intl.DateTimeFormat('es-ES').format(new Date(year, month - 1, day));
+}
+
+function crearIcono(nombre) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '18');
+    svg.setAttribute('height', '18');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.8');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+
+    const paths = {
+        editar: ['M12 20h9', 'M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z'],
+        eliminar: ['M3 6h18', 'M8 6V4h8v2', 'm19 6-1 14H6L5 6', 'M10 11v5', 'M14 11v5'],
+        guardar: ['m5 12 4 4L19 6'],
+        cancelar: ['M18 6 6 18', 'M6 6l12 12']
+    };
+
+    for (const d of paths[nombre]) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        svg.append(path);
+    }
+    return svg;
+}
+
+function crearBotonAccion(etiqueta, icono, clase, accion) {
+    const boton = crearElemento('button', clase);
+    boton.type = 'button';
+    boton.setAttribute('aria-label', etiqueta);
+    boton.title = etiqueta;
+    boton.append(crearIcono(icono));
+    boton.addEventListener('click', accion);
+    return boton;
+}
+
+function renderizarFilaVuelta(vuelta, indice) {
+    const fila = document.createElement('tr');
+    fila.append(crearElemento('td', '', String(vuelta.numVuelta ?? '')));
+    fila.append(crearElemento('td', '', formatearFecha(vuelta.fechaVuelta)));
+
+    const acciones = document.createElement('td');
+    acciones.className = 'acciones-vuelta';
+    acciones.append(
+        crearBotonAccion('Editar vuelta', 'editar', 'boton-accion', () => editarVuelta(vuelta, indice)),
+        crearBotonAccion('Eliminar vuelta', 'eliminar', 'boton-accion boton-peligro', () => eliminarVuelta(vuelta))
+    );
+    fila.append(acciones);
+    return fila;
+}
+
+function editarVuelta(vuelta, indice, nueva = false) {
+    const fila = document.createElement('tr');
+    fila.className = 'fila-edicion';
+    const celdaNumero = document.createElement('td');
+    const campoNumero = document.createElement('input');
+    campoNumero.type = 'number';
+    campoNumero.min = '1';
+    campoNumero.step = '1';
+    campoNumero.required = true;
+    campoNumero.value = String(vuelta.numVuelta ?? '');
+    campoNumero.setAttribute('aria-label', 'Número de vuelta');
+    celdaNumero.append(campoNumero);
+    fila.append(celdaNumero);
+
+    const celdaFecha = document.createElement('td');
+    const campoFecha = document.createElement('input');
+    campoFecha.type = 'date';
+    campoFecha.required = true;
+    campoFecha.value = vuelta.fechaVuelta ?? '';
+    campoFecha.setAttribute('aria-label', 'Fecha de la vuelta');
+    celdaFecha.append(campoFecha);
+    fila.append(celdaFecha);
+
+    const acciones = document.createElement('td');
+    acciones.className = 'acciones-vuelta';
+    const botonGuardar = crearBotonAccion('Guardar vuelta', 'guardar', 'boton-accion', async () => {
+        if (!campoNumero.reportValidity() || !campoFecha.reportValidity()) return;
+        botonGuardar.disabled = true;
+        estadoVuelta.textContent = 'Guardando cambios…';
+
+        try {
+            const cambios = {
+                numVuelta: Number(campoNumero.value),
+                fechaVuelta: campoFecha.value
+            };
+            const consulta = nueva
+                ? supabase.from('temasVueltas').insert({
+                    ...cambios,
+                    vuelta_id: temaDetalleActual.temas_id
+                })
+                : supabase.from('temasVueltas')
+                    .update(cambios)
+                    .eq('vuelta_id', vuelta.vuelta_id);
+            const { data, error } = await consulta
+                .select('vuelta_id,fechaVuelta,numVuelta')
+                .single();
+
+            if (error) throw error;
+
+            if (nueva) {
+                temaDetalleActual.temasVueltas.push(data);
+            } else {
+                Object.assign(vuelta, cambios);
+            }
+            temaDetalleActual.temasVueltas.sort((a, b) => Number(a.numVuelta) - Number(b.numVuelta));
+            renderizarVueltas(temaDetalleActual);
+            actualizarContadorVueltasLista(temaDetalleActual);
+            estadoVuelta.textContent = nueva
+                ? 'Vuelta añadida correctamente.'
+                : 'Vuelta actualizada correctamente.';
+        } catch (error) {
+            estadoVuelta.textContent = `No se pudo ${nueva ? 'añadir' : 'actualizar'} la vuelta: ${error.message}`;
+            botonGuardar.disabled = false;
+        }
+    });
+    acciones.append(
+        botonGuardar,
+        crearBotonAccion('Cancelar edición', 'cancelar', 'boton-accion', () => {
+            if (nueva) {
+                estadoVuelta.textContent = '';
+                renderizarVueltas(temaDetalleActual);
+            } else {
+                renderizarVueltas(temaDetalleActual);
+            }
+        })
+    );
+    fila.append(acciones);
+    const vueltas = obtenerVueltas(temaDetalleActual);
+    const filas = vueltas.map((item, itemIndice) =>
+        !nueva && itemIndice === indice ? fila : renderizarFilaVuelta(item, itemIndice)
+    );
+    if (nueva) filas.push(fila);
+    tbodyVueltas.replaceChildren(...filas);
+    campoNumero.focus();
+}
+
+function actualizarContadorVueltasLista(tema) {
+    const contadorLista = document.querySelector(
+        `[data-contador-tema="${CSS.escape(String(tema.temas_id))}"]`
+    );
+    if (contadorLista) contadorLista.textContent = String(obtenerVueltas(tema).length);
+}
+
+async function eliminarVuelta(vuelta) {
+    if (!window.confirm(`¿Seguro que quieres eliminar la vuelta ${vuelta.numVuelta}? Esta acción no se puede deshacer.`)) {
+        return;
+    }
+
+    estadoVuelta.textContent = 'Eliminando vuelta…';
+    try {
+        const { error } = await supabase
+            .from('temasVueltas')
+            .delete()
+            .eq('vuelta_id', vuelta.vuelta_id)
+            .select('vuelta_id')
+            .single();
+
+        if (error) throw error;
+
+        temaDetalleActual.temasVueltas = temaDetalleActual.temasVueltas
+            .filter((item) => item.vuelta_id !== vuelta.vuelta_id);
+        renderizarVueltas(temaDetalleActual);
+        actualizarContadorVueltasLista(temaDetalleActual);
+        estadoVuelta.textContent = 'Vuelta eliminada correctamente.';
+    } catch (error) {
+        estadoVuelta.textContent = `No se pudo eliminar la vuelta: ${error.message}`;
+    }
+}
+
+function renderizarVueltas(tema) {
+    const vueltas = obtenerVueltas(tema);
+    tema.temasVueltas = vueltas;
+    tbodyVueltas.replaceChildren();
+
+    if (vueltas.length === 0) {
+        const fila = crearElemento('tr', 'fila-vacia');
+        const celda = crearElemento('td', '', 'Todavía no hay vueltas registradas para este tema.');
+        celda.colSpan = 3;
+        fila.append(celda);
+        tbodyVueltas.append(fila);
+        return;
+    }
+
+    vueltas.forEach((vuelta, indice) => tbodyVueltas.append(renderizarFilaVuelta(vuelta, indice)));
+}
+
+function abrirDetalle(tema, botonOrigen) {
+    temaDetalleActual = tema;
+    botonTemaAnterior = botonOrigen;
+    detalleTitulo.textContent = `Tema ${tema.numTema ?? ''} ${tema.typeTema ?? ''}`.trim();
+    renderizarVueltas(tema);
+    estadoVuelta.textContent = '';
+    checkboxReformaDetalle.checked = Boolean(tema.tieneReformaPendiente);
+    checkboxReformaDetalle.dataset.temaId = String(tema.temas_id);
+    checkboxReformaDetalle.setAttribute('aria-label', `Reforma pendiente para Tema ${tema.numTema ?? ''}`);
+    vistaLista.hidden = true;
+    vistaDetalle.hidden = false;
+    detalleTitulo.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function volverALista() {
+    vistaDetalle.hidden = true;
+    vistaLista.hidden = false;
+    temaDetalleActual = undefined;
+    botonTemaAnterior?.focus();
+    botonTemaAnterior = undefined;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function cargarTemas() {
@@ -122,7 +386,8 @@ async function cargarTemas() {
 
     contenedorMaterias.replaceChildren();
     const grupos = new Map();
-    for (const tema of data ?? []) {
+    for (const temaOriginal of data ?? []) {
+        const tema = { ...temaOriginal, temasVueltas: obtenerVueltas(temaOriginal) };
         const tipo = tema.typeTema || 'Sin materia';
         if (!grupos.has(tipo)) grupos.set(tipo, []);
         grupos.get(tipo).push(tema);
@@ -130,6 +395,7 @@ async function cargarTemas() {
 
     if (grupos.size === 0) {
         estadoDatos.textContent = 'No hay temas registrados todavía.';
+        volverALista();
         return;
     }
 
@@ -139,12 +405,14 @@ async function cargarTemas() {
         indice += 1;
     }
     estadoDatos.textContent = `Temas cargados desde Supabase (${data.length}).`;
+    volverALista();
 }
 
 function mostrarAcceso(mensaje = '') {
     usuarioActivoId = undefined;
     panelAcceso.hidden = false;
     contenidoTemas.hidden = true;
+    temaDetalleActual = undefined;
     botonCerrarSesion.hidden = true;
     usuarioActivo.hidden = true;
     usuarioActivo.textContent = '';
@@ -161,6 +429,32 @@ async function mostrarTemas(user) {
     usuarioActivo.textContent = user.email ?? 'Sesión activa';
     await cargarTemas();
 }
+
+botonVolver.addEventListener('click', volverALista);
+
+checkboxReformaDetalle.addEventListener('change', () => {
+    if (temaDetalleActual) guardarReforma(temaDetalleActual, checkboxReformaDetalle);
+});
+
+botonAnadirVuelta.addEventListener('click', () => {
+    if (!temaDetalleActual) return;
+
+    if (tbodyVueltas.querySelector('.fila-edicion')) {
+        estadoVuelta.textContent = 'Guarda o cancela la vuelta que estás editando antes de añadir otra.';
+        return;
+    }
+
+    const vueltas = obtenerVueltas(temaDetalleActual);
+    const maxNumVuelta = vueltas.reduce((maximo, vuelta) => {
+        const numero = Number(vuelta.numVuelta);
+        return Number.isFinite(numero) ? Math.max(maximo, numero) : maximo;
+    }, 0);
+    estadoVuelta.textContent = '';
+    editarVuelta({
+        numVuelta: maxNumVuelta + 1,
+        fechaVuelta: fechaLocalActual()
+    }, vueltas.length, true);
+});
 
 if (supabase) {
     formularioAcceso.addEventListener('submit', async (event) => {
