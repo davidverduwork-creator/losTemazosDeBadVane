@@ -278,7 +278,7 @@ if (neon) {
 
         const formData = new FormData(formularioAcceso);
         try {
-            const { data, error } = await neon.auth.signIn.email({
+            const { data: signInData, error } = await neon.auth.signIn.email({
                 email: String(formData.get('email')),
                 password: String(formData.get('password'))
             });
@@ -288,13 +288,19 @@ if (neon) {
                 return;
             }
 
-            if (!data?.session || !data.user) {
-                throw new Error('Neon Auth no devolvió una sesión después de iniciar sesión.');
+            if (!signInData?.user) {
+                throw new Error('Neon Auth no devolvió los datos del usuario después de iniciar sesión.');
             }
 
-            if (usuarioActivoId !== data.user.id) {
-                usuarioActivoId = data.user.id;
-                await mostrarTemas(data.user).catch((loadError) => {
+            const { data: sessionData, error: sessionError } = await neon.auth.getSession();
+            if (sessionError) throw sessionError;
+            if (!sessionData?.session || !sessionData.user) {
+                throw new Error('Neon Auth aceptó las credenciales, pero no se pudo recuperar la sesión del navegador.');
+            }
+
+            if (usuarioActivoId !== sessionData.user.id) {
+                usuarioActivoId = sessionData.user.id;
+                await mostrarTemas(sessionData.user).catch((loadError) => {
                     estadoDatos.textContent = `No se pudieron cargar los temas: ${loadError.message}`;
                 });
             }
@@ -317,9 +323,10 @@ Al enviar el formulario:
 1. `preventDefault()` evita la recarga normal de la página.
 2. Se deshabilita el botón y se muestra un mensaje de espera.
 3. `FormData` lee los campos del formulario por sus atributos `name` (`email` y `password`).
-4. `signIn.email` envía las credenciales a Neon Auth y devuelve los datos del usuario y la sesión.
-5. Si hay un error, se muestra. Si no, la interfaz usa la sesión devuelta directamente, sin hacer una segunda consulta de sesión.
-6. `finally` vuelve a habilitar el botón en ambos casos.
+4. `signIn.email` envía las credenciales a Neon Auth y devuelve el usuario y un token de inicio de sesión.
+5. `getSession()` recupera por separado la sesión completa que necesita la aplicación y Neon Data API. El token de la respuesta de inicio no se usa como JWT de base de datos.
+6. Si la sesión no se puede recuperar, se muestra el error en vez de presentar como autenticado a un usuario sin sesión.
+7. `finally` vuelve a habilitar el botón en ambos casos.
 
 El bloque `catch` captura errores inesperados de la llamada. El objeto `error` que devuelve el SDK se comprueba por separado porque muchas respuestas de autenticación y de la Data API incluyen el error en el resultado.
 

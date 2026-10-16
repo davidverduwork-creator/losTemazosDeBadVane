@@ -16,7 +16,7 @@ npx neon@latest psql production -- -f database/migrations/001_initial_schema.sql
 
 La migración habilita RLS y concede al rol `authenticated` solo lectura y actualización en `temas`, y lectura, inserción, actualización y eliminación en `temasVueltas` y `temasCantes`. La política permite acceder únicamente a usuarios autenticados. No concede permisos al rol `anonymous`.
 
-Las cuentas y contraseñas de Supabase no se pueden importar como credenciales válidas de Neon Auth. Habrá que crear las cuentas en Neon y establecer contraseñas nuevas; el registro público de la app permanece desactivado.
+Las contraseñas del proveedor de autenticación anterior no se pueden reutilizar en Neon Auth; las cuentas deben tener credenciales creadas en Neon. El registro público de la app permanece desactivado.
 
 `npm run build` genera la versión de producción en `dist/`.
 
