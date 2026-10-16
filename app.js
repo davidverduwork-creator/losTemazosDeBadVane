@@ -683,7 +683,7 @@ if (neon) {
 
         const formData = new FormData(formularioAcceso);
         try {
-            const { error } = await neon.auth.signInWithPassword({
+            const { data, error } = await neon.auth.signIn.email({
                 email: String(formData.get('email')),
                 password: String(formData.get('password'))
             });
@@ -693,15 +693,13 @@ if (neon) {
                 return;
             }
 
-            const { data, error: sessionError } = await neon.auth.getSession();
-            if (sessionError) throw sessionError;
-            if (!data.session) {
-                throw new Error('No se encontró una sesión activa después de iniciar sesión.');
+            if (!data?.session || !data.user) {
+                throw new Error('Neon Auth no devolvió una sesión después de iniciar sesión.');
             }
 
-            if (usuarioActivoId !== data.session.user.id) {
-                usuarioActivoId = data.session.user.id;
-                await mostrarTemas(data.session.user).catch((loadError) => {
+            if (usuarioActivoId !== data.user.id) {
+                usuarioActivoId = data.user.id;
+                await mostrarTemas(data.user).catch((loadError) => {
                     estadoDatos.textContent = `No se pudieron cargar los temas: ${loadError.message}`;
                 });
             }
@@ -731,16 +729,20 @@ if (neon) {
         }
     });
 
-    neon.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_OUT') {
-            mostrarAcceso();
+    neon.auth.useSession.subscribe(({ data, isPending }) => {
+        if (isPending) return;
+
+        if (!data?.session || !data.user) {
+            if (usuarioActivoId) {
+                mostrarAcceso();
+            }
             return;
         }
 
-        if (event === 'SIGNED_IN' && session && usuarioActivoId !== session.user.id) {
-            usuarioActivoId = session.user.id;
+        if (usuarioActivoId !== data.user.id) {
+            usuarioActivoId = data.user.id;
             window.setTimeout(() => {
-                mostrarTemas(session.user).catch((error) => {
+                mostrarTemas(data.user).catch((error) => {
                     estadoDatos.textContent = `No se pudieron cargar los temas: ${error.message}`;
                 });
             }, 0);
@@ -753,12 +755,12 @@ if (neon) {
             return;
         }
 
-        if (data.session && usuarioActivoId !== data.session.user.id) {
-            usuarioActivoId = data.session.user.id;
-            mostrarTemas(data.session.user).catch((loadError) => {
+        if (data?.session && data.user && usuarioActivoId !== data.user.id) {
+            usuarioActivoId = data.user.id;
+            mostrarTemas(data.user).catch((loadError) => {
                 estadoDatos.textContent = `No se pudieron cargar los temas: ${loadError.message}`;
             });
-        } else if (!data.session && !usuarioActivoId) {
+        } else if (!data?.session && !usuarioActivoId) {
             mostrarAcceso();
         }
     }).catch((error) => {
