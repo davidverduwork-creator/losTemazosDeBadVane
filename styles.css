@@ -179,7 +179,7 @@ body {
 }
 
 .contenido-principal {
-    width: min(1240px, calc(100% - 96px));
+    width: min(1240px, calc(100% - 48px));
     margin: 0 auto;
     padding: 58px 0 76px;
     scroll-margin-top: 24px;
@@ -234,7 +234,7 @@ h1 {
 
 .materia-encabezado {
     min-height: 70px;
-    padding: 16px 18px;
+    padding: 18px 20px;
     display: flex;
     align-items: center;
     gap: 11px;
@@ -265,24 +265,6 @@ h1 {
 
 .indicador-azul {
     background: #78a6dc;
-}
-
-.materia th,
-.materia td {
-    padding: 10px 12px;
-}
-
-.materia table {
-    width: 100%;
-    table-layout: fixed;
-}
-
-.materia th:last-child,
-.materia td:last-child {
-    width: 30%;
-    padding-right: 12px;
-    padding-left: 8px;
-    text-align: center;
 }
 
 .tabla-contenedor {
@@ -732,7 +714,7 @@ tbody tr:last-child td {
     }
 
     .contenido-principal {
-        width: calc(100% - 48px);
+        width: calc(100% - 32px);
         padding: 42px 0 54px;
     }
 }

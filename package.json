@@ -1,8 +1,6 @@
 {
   "dependencies": {
-    "@neon/config": "^1.9.2",
-    "@neon/env": "^1.6.3",
-    "@neondatabase/neon-js": "^0.8.0-beta"
+    "@supabase/supabase-js": "^2.117.2"
   },
   "devDependencies": {
     "vite": "^8.3.2"
