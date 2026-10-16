@@ -683,7 +683,7 @@ if (neon) {
 
         const formData = new FormData(formularioAcceso);
         try {
-            const { data, error } = await neon.auth.signIn.email({
+            const { data: signInData, error } = await neon.auth.signIn.email({
                 email: String(formData.get('email')),
                 password: String(formData.get('password'))
             });
@@ -693,13 +693,19 @@ if (neon) {
                 return;
             }
 
-            if (!data?.session || !data.user) {
-                throw new Error('Neon Auth no devolvió una sesión después de iniciar sesión.');
+            if (!signInData?.user) {
+                throw new Error('Neon Auth no devolvió los datos del usuario después de iniciar sesión.');
             }
 
-            if (usuarioActivoId !== data.user.id) {
-                usuarioActivoId = data.user.id;
-                await mostrarTemas(data.user).catch((loadError) => {
+            const { data: sessionData, error: sessionError } = await neon.auth.getSession();
+            if (sessionError) throw sessionError;
+            if (!sessionData?.session || !sessionData.user) {
+                throw new Error('Neon Auth aceptó las credenciales, pero no se pudo recuperar la sesión del navegador. Comprueba que el navegador permita las cookies para este sitio.');
+            }
+
+            if (usuarioActivoId !== sessionData.user.id) {
+                usuarioActivoId = sessionData.user.id;
+                await mostrarTemas(sessionData.user).catch((loadError) => {
                     estadoDatos.textContent = `No se pudieron cargar los temas: ${loadError.message}`;
                 });
             }
