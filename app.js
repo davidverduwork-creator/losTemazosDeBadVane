@@ -1,4 +1,4 @@
-import { crearClienteSupabase } from './src/supabase.js';
+import { crearClienteNeon } from './src/neon.js';
 
 const panelAcceso = document.getElementById('panel-acceso');
 const formularioAcceso = document.getElementById('form-acceso');
@@ -20,13 +20,13 @@ const botonAnadirCante = document.getElementById('btn-anadir-cante');
 const checkboxReformaDetalle = document.getElementById('chk-reforma-detalle');
 const estadoVuelta = document.getElementById('estado-vuelta');
 const estadoCante = document.getElementById('estado-cante');
-let supabase;
+let neon;
 let usuarioActivoId;
 let temaDetalleActual;
 let botonTemaAnterior;
 
 try {
-    supabase = crearClienteSupabase();
+    neon = crearClienteNeon();
 } catch (error) {
     estadoAcceso.textContent = error.message;
     botonIniciarSesion.disabled = true;
@@ -85,7 +85,7 @@ async function guardarReforma(tema, checkbox) {
     estadoDatos.textContent = 'Guardando cambio…';
 
     try {
-        const { error } = await supabase
+        const { error } = await neon
             .from('temas')
             .update({ tieneReformaPendiente: nuevoValor })
             .eq('temas_id', tema.temas_id)
@@ -131,7 +131,7 @@ function crearTabla(tipo, temas, indice) {
     const thead = document.createElement('thead');
     const filaTitulos = document.createElement('tr');
 
-    for (const texto of ['Tema', 'Vueltas', 'Reforma']) {
+    for (const texto of ['Tema', 'Vueltas']) {
         const celda = crearElemento('th', '', texto);
         celda.scope = 'col';
         filaTitulos.append(celda);
@@ -144,7 +144,7 @@ function crearTabla(tipo, temas, indice) {
     if (temas.length === 0) {
         const fila = crearElemento('tr', 'fila-vacia');
         const celda = crearElemento('td', '', 'Aún no hay temas para mostrar.');
-        celda.colSpan = 3;
+        celda.colSpan = 2;
         fila.append(celda);
         tbody.append(fila);
     }
@@ -161,15 +161,6 @@ function crearTabla(tipo, temas, indice) {
         celdaVueltas.dataset.contadorTema = String(tema.temas_id);
         fila.append(celdaVueltas);
 
-        const celdaReforma = document.createElement('td');
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = Boolean(tema.tieneReformaPendiente);
-        checkbox.dataset.temaId = String(tema.temas_id);
-        checkbox.setAttribute('aria-label', `Reforma pendiente para ${tema.numTema ?? 'este tema'}`);
-        checkbox.addEventListener('change', () => guardarReforma(tema, checkbox));
-        celdaReforma.append(checkbox);
-        fila.append(celdaReforma);
         tbody.append(fila);
     }
 
@@ -311,11 +302,11 @@ function editarCante(cante, indice, nueva = false) {
                 return;
             }
             const consulta = nueva
-                ? supabase.from('temasCantes').insert({
+                ? neon.from('temasCantes').insert({
                     ...cambios,
                     temas_id: tema.temas_id
                 })
-                : supabase.from('temasCantes')
+                : neon.from('temasCantes')
                     .update(cambios)
                     .eq('cante_id', cante.cante_id);
             const { data, error } = await consulta
@@ -398,11 +389,11 @@ function editarVuelta(vuelta, indice, nueva = false) {
                 fechaVuelta: campoFecha.value
             };
             const consulta = nueva
-                ? supabase.from('temasVueltas').insert({
+                ? neon.from('temasVueltas').insert({
                     ...cambios,
                     temas_id: tema.temas_id
                 })
-                : supabase.from('temasVueltas')
+                : neon.from('temasVueltas')
                     .update(cambios)
                     .eq('vuelta_id', vuelta.vuelta_id);
             const { data, error } = await consulta
@@ -467,7 +458,7 @@ async function eliminarVuelta(vuelta) {
 
     estadoVuelta.textContent = 'Eliminando vuelta…';
     try {
-        const { error } = await supabase
+        const { error } = await neon
             .from('temasVueltas')
             .delete()
             .eq('vuelta_id', vuelta.vuelta_id)
@@ -494,7 +485,7 @@ async function eliminarCante(cante) {
 
     estadoCante.textContent = 'Eliminando cante…';
     try {
-        const { error } = await supabase
+        const { error } = await neon
             .from('temasCantes')
             .delete()
             .eq('cante_id', cante.cante_id)
@@ -577,7 +568,7 @@ function volverALista() {
 }
 
 async function cargarTemas() {
-    const { data, error } = await supabase
+    const { data, error } = await neon
         .from('temas')
         .select('temas_id,numTema,typeTema,tieneReformaPendiente,temasVueltas(vuelta_id,temas_id,fechaVuelta,numVuelta),temasCantes(cante_id,temas_id,numCante,tiempoCante,observacionesCante)')
         .order('typeTema')
@@ -611,7 +602,7 @@ async function cargarTemas() {
         contenedorMaterias.append(crearTabla(tipo, temas, indice));
         indice += 1;
     }
-    estadoDatos.textContent = `Temas cargados desde Supabase (${data.length}).`;
+    estadoDatos.textContent = `Temas cargados desde Neon (${data.length}).`;
     volverALista();
 }
 
@@ -684,7 +675,7 @@ botonAnadirVuelta.addEventListener('click', () => {
     }, vueltas.length, true);
 });
 
-if (supabase) {
+if (neon) {
     formularioAcceso.addEventListener('submit', async (event) => {
         event.preventDefault();
         botonIniciarSesion.disabled = true;
@@ -692,7 +683,7 @@ if (supabase) {
 
         const formData = new FormData(formularioAcceso);
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { error } = await neon.auth.signInWithPassword({
                 email: String(formData.get('email')),
                 password: String(formData.get('password'))
             });
@@ -700,6 +691,19 @@ if (supabase) {
             if (error) {
                 estadoAcceso.textContent = `No se pudo iniciar sesión: ${error.message}`;
                 return;
+            }
+
+            const { data, error: sessionError } = await neon.auth.getSession();
+            if (sessionError) throw sessionError;
+            if (!data.session) {
+                throw new Error('No se encontró una sesión activa después de iniciar sesión.');
+            }
+
+            if (usuarioActivoId !== data.session.user.id) {
+                usuarioActivoId = data.session.user.id;
+                await mostrarTemas(data.session.user).catch((loadError) => {
+                    estadoDatos.textContent = `No se pudieron cargar los temas: ${loadError.message}`;
+                });
             }
 
             formularioAcceso.reset();
@@ -714,10 +718,12 @@ if (supabase) {
     botonCerrarSesion.addEventListener('click', async () => {
         botonCerrarSesion.disabled = true;
         try {
-            const { error } = await supabase.auth.signOut();
+            const { error } = await neon.auth.signOut();
             if (error) {
                 estadoDatos.textContent = `No se pudo cerrar sesión: ${error.message}`;
+                return;
             }
+            mostrarAcceso();
         } catch (error) {
             estadoDatos.textContent = `No se pudo cerrar sesión: ${error.message}`;
         } finally {
@@ -725,7 +731,7 @@ if (supabase) {
         }
     });
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    neon.auth.onAuthStateChange((event, session) => {
         if (event === 'SIGNED_OUT') {
             mostrarAcceso();
             return;
@@ -741,7 +747,7 @@ if (supabase) {
         }
     });
 
-    supabase.auth.getSession().then(({ data, error }) => {
+    neon.auth.getSession().then(({ data, error }) => {
         if (error) {
             mostrarAcceso(`No se pudo comprobar la sesión: ${error.message}`);
             return;

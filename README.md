@@ -3,13 +3,23 @@
 ## Ejecutar localmente
 
 1. Copia `.env.example` a `.env.local`.
-2. En Supabase, abre **Project Settings → API Keys** y copia la clave `anon`/`publishable` a `VITE_SUPABASE_ANON_KEY` en `.env.local`. No uses una clave `service_role` ni `secret`.
+2. Ejecuta `npx neon@latest env pull` y copia los valores de `NEON_AUTH_BASE_URL` y `NEON_DATA_API_URL` a `VITE_NEON_AUTH_URL` y `VITE_NEON_DATA_API_URL` en `.env.local`. Son URL públicas; no expongas `DATABASE_URL` ni `DATABASE_URL_UNPOOLED` en variables `VITE_*`.
 3. Ejecuta `npm install` y `npm run dev`.
 
-La app permite iniciar sesión con email y contraseña (no permite crear cuentas), consulta `temas` junto con las relaciones `temasVueltas` y `temasCantes`, y permite actualizar `temas.tieneReformaPendiente`. En el detalle se pueden añadir, modificar y eliminar vueltas y cantes. Las vueltas se insertan con fecha editable; los cantes incluyen número, duración en segundos (se muestra como minutos:segundos) y observaciones. La creación abre una fila editable y solo inserta el registro al guardar. `temasVueltas` y `temasCantes` usan sus respectivos IDs como claves primarias y `temas_id` como clave foránea a `temas.temas_id`. Configura las políticas RLS para el rol `authenticated` con permisos de lectura, inserción, actualización y eliminación en `temasVueltas` y `temasCantes`, y lectura y actualización en `temas`.
+La autenticación y las consultas usan Neon Auth y Neon Data API con `@neondatabase/neon-js`. La app permite iniciar sesión con email y contraseña y no permite crear cuentas. Consulta `temas` junto con las relaciones `temasVueltas` y `temasCantes`, permite actualizar `temas.tieneReformaPendiente` y añadir, modificar y eliminar vueltas y cantes.
+
+Inicializa el esquema y sus políticas con:
+
+```sh
+npx neon@latest psql production -- -f database/migrations/001_initial_schema.sql
+```
+
+La migración habilita RLS y concede al rol `authenticated` solo lectura y actualización en `temas`, y lectura, inserción, actualización y eliminación en `temasVueltas` y `temasCantes`. La política permite acceder únicamente a usuarios autenticados. No concede permisos al rol `anonymous`.
+
+Las cuentas y contraseñas de Supabase no se pueden importar como credenciales válidas de Neon Auth. Habrá que crear las cuentas en Neon y establecer contraseñas nuevas; el registro público de la app permanece desactivado.
 
 `npm run build` genera la versión de producción en `dist/`.
 
 ## Desplegar en GitHub Pages
 
-El workflow de GitHub Actions compila y publica `dist/` al hacer push a `main`. En **Settings → Secrets and variables → Actions → Variables**, define `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (la clave `publishable`/`anon`, nunca una `service_role`). Después, en **Settings → Pages**, selecciona GitHub Actions como fuente de despliegue. La web publicada es pública; Supabase Auth y las políticas RLS deben proteger los datos.
+El workflow de GitHub Actions compila y publica `dist/` al hacer push a `main`. En **Settings → Secrets and variables → Actions → Variables**, define `VITE_NEON_AUTH_URL` y `VITE_NEON_DATA_API_URL` con las URL públicas del branch de Neon de producción. Añade el origen `https://davidverduwork-creator.github.io` a los dominios de confianza de Neon Auth. Después, en **Settings → Pages**, selecciona GitHub Actions como fuente de despliegue. La web publicada es pública; Neon Auth, los permisos SQL y las políticas RLS deben proteger los datos.
